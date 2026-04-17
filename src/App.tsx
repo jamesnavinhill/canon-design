@@ -251,7 +251,7 @@ type ToastPreviewItem = {
   description: string;
   meta: string;
   icon: ReactNode;
-  actionLabel: string;
+  actionLabel?: string;
 };
 
 const createToastPreviewItems = (): ToastPreviewItem[] => [
@@ -262,7 +262,7 @@ const createToastPreviewItems = (): ToastPreviewItem[] => [
     description: 'Shared dialog widths and toast surfaces are aligned for the next packaging pass.',
     meta: 'Graph 1',
     icon: <Download size={16} />,
-    actionLabel: 'Inspect',
+    actionLabel: 'Open export details',
   },
   {
     id: 'feedback-layer',
@@ -272,7 +272,6 @@ const createToastPreviewItems = (): ToastPreviewItem[] => [
       'Notifications now live in the shared surfaces family instead of relying on page-local markup.',
     meta: 'Graph 2',
     icon: <Bell size={16} />,
-    actionLabel: 'Open Surface',
   },
   {
     id: 'modal-shape',
@@ -282,7 +281,6 @@ const createToastPreviewItems = (): ToastPreviewItem[] => [
       'Standard modals now bias toward a narrower, more vertical review shape while the workflow dialog stays wide.',
     meta: 'Graph 3',
     icon: <Compass size={16} />,
-    actionLabel: 'Compare',
   },
   {
     id: 'workflow-ready',
@@ -292,7 +290,7 @@ const createToastPreviewItems = (): ToastPreviewItem[] => [
       'The wide structured dialog remains available for launches, approvals, and multi-step configuration flows.',
     meta: 'Graph 4',
     icon: <Workflow size={16} />,
-    actionLabel: 'View Flow',
+    actionLabel: 'Open workflow dialog',
   },
 ];
 
@@ -1219,43 +1217,83 @@ export default function App() {
             ) : null}
 
             {galleryTab === 'controls' ? (
-              <ResponsiveGrid>
-                <SurfaceCard title="Buttons + Badges" eyebrow="Inputs">
-                  <div className="ds-stack">
-                    <div className="ds-chip-grid">
-                      <Badge variant="outline">Chrome {theme.controls.chrome}</Badge>
+              <div className="ds-showcase-columns ds-showcase-columns-controls">
+                <div className="ds-showcase-column">
+                  <SurfaceCard title="Buttons + Badges" eyebrow="Inputs">
+                    <div className="ds-stack">
+                      <div className="ds-chip-grid">
+                        <Badge variant="outline">Chrome {theme.controls.chrome}</Badge>
+                      </div>
+                      <ToolbarCluster className="ds-wrap">
+                        <Button variant="primary" leadingIcon={<Sparkles size={16} />}>
+                          Primary
+                        </Button>
+                        <Button variant="secondary">Secondary</Button>
+                        <Button variant="secondary" size="compact">
+                          Compact
+                        </Button>
+                        <Button variant="ghost">Ghost</Button>
+                        <Button variant="toolbar" leadingIcon={<BookOpen size={14} />}>
+                          Toolbar
+                        </Button>
+                      </ToolbarCluster>
+                      <div className="ds-chip-grid">
+                        <Badge variant="accent">Accent</Badge>
+                        <Badge>Neutral</Badge>
+                        <Badge variant="outline">Outline</Badge>
+                      </div>
                     </div>
-                    <ToolbarCluster className="ds-wrap">
-                      <Button variant="primary" leadingIcon={<Sparkles size={16} />}>
-                        Primary
-                      </Button>
-                      <Button variant="secondary">Secondary</Button>
-                      <Button variant="secondary" size="compact">
-                        Compact
-                      </Button>
-                      <Button variant="ghost">Ghost</Button>
-                      <Button variant="toolbar" leadingIcon={<BookOpen size={14} />}>
-                        Toolbar
-                      </Button>
-                    </ToolbarCluster>
-                    <div className="ds-chip-grid">
-                      <Badge variant="accent">Accent</Badge>
-                      <Badge>Neutral</Badge>
-                      <Badge variant="outline">Outline</Badge>
-                    </div>
-                  </div>
-                </SurfaceCard>
+                  </SurfaceCard>
 
-                <SurfaceCard title="Selectors + Option Group" eyebrow="Navigation">
-                  <div className="ds-stack">
+                  <SurfaceCard title="Workspace Select" eyebrow="Navigation">
                     <SelectField
                       label="Active Workspace"
                       value={workspaceId}
                       onChange={setWorkspaceId}
                       options={WORKSPACE_OPTIONS}
                     />
+                  </SurfaceCard>
+
+                  <SurfaceCard title="Menu Behavior" eyebrow="Popup">
+                    <div className="ds-stack">
+                      <MenuButton
+                        label="Open Action Menu"
+                        items={[
+                          {
+                            id: 'save',
+                            label: 'Save Draft',
+                            description: 'Real handler keeps the menu primitive canon-ready.',
+                            icon: <BookOpen size={14} />,
+                            shortcut: 'S',
+                            onSelect: () => setGalleryTab('surfaces'),
+                          },
+                          {
+                            id: 'checked',
+                            label: 'Checked Item',
+                            description: 'Shared row chrome with explicit checked state.',
+                            icon: <Bell size={14} />,
+                            checked: true,
+                            shortcut: 'C',
+                            onSelect: () => setGalleryTab('controls'),
+                          },
+                          {
+                            id: 'disabled',
+                            label: 'Disabled Item',
+                            description: 'Disabled rows stay visible without a different shell.',
+                            icon: <SlidersHorizontal size={14} />,
+                            disabled: true,
+                            shortcut: 'D',
+                          },
+                        ]}
+                      />
+                    </div>
+                  </SurfaceCard>
+                </div>
+
+                <div className="ds-showcase-column">
+                  <SurfaceCard title="Single Select" eyebrow="Selection">
                     <OptionGroup
-                      label="Single Select"
+                      label="Chrome Choices"
                       columns={1}
                       value={controlChromeChoice}
                       onChange={setControlChromeChoice}
@@ -1277,8 +1315,11 @@ export default function App() {
                         },
                       ]}
                     />
+                  </SurfaceCard>
+
+                  <SurfaceCard title="Multi Select" eyebrow="Selection">
                     <OptionGroup
-                      label="Multi Select"
+                      label="Behavior Tags"
                       selectionMode="multiple"
                       columns={1}
                       value={controlBehaviorTags}
@@ -1301,195 +1342,165 @@ export default function App() {
                         },
                       ]}
                     />
-                  </div>
-                </SurfaceCard>
+                  </SurfaceCard>
+                </div>
 
-                <SurfaceCard title="Date Range + Dialogs" eyebrow="Overlays">
-                  <div className="ds-stack">
-                    <DateRangePicker
-                      label="Shared Date Range"
-                      value={controlsDateRange}
-                      onChange={setControlsDateRange}
-                      presets={CONTROL_DATE_RANGE_PRESETS}
-                    />
-                    <ToolbarCluster className="ds-wrap">
-                      <PopoverButton
-                        label="Open Configuration Popout"
-                        variant="secondary"
-                        leadingIcon={<Settings2 size={14} />}
-                        align="start"
-                      >
-                        {configurationPanel}
-                      </PopoverButton>
-                      <Button
-                        variant="ghost"
-                        leadingIcon={<Workflow size={16} />}
-                        onClick={() => setWorkflowOpen(true)}
-                      >
-                        Open Workflow Dialog
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        leadingIcon={<Bell size={16} />}
-                        onClick={() => setModalOpen(true)}
-                      >
-                        Open Review Modal
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        leadingIcon={<Bell size={16} />}
-                        onClick={() => setModelessModalOpen(true)}
-                      >
-                        Open Modeless Dialog
-                      </Button>
-                    </ToolbarCluster>
-                  </div>
-                </SurfaceCard>
+                <div className="ds-showcase-column">
+                  <SurfaceCard title="Date Range + Dialogs" eyebrow="Overlays">
+                    <div className="ds-stack">
+                      <DateRangePicker
+                        label="Shared Date Range"
+                        value={controlsDateRange}
+                        onChange={setControlsDateRange}
+                        presets={CONTROL_DATE_RANGE_PRESETS}
+                      />
+                      <ToolbarCluster className="ds-wrap">
+                        <PopoverButton
+                          label="Open Configuration Popout"
+                          variant="secondary"
+                          leadingIcon={<Settings2 size={14} />}
+                          align="start"
+                        >
+                          {configurationPanel}
+                        </PopoverButton>
+                        <Button
+                          variant="ghost"
+                          leadingIcon={<Workflow size={16} />}
+                          onClick={() => setWorkflowOpen(true)}
+                        >
+                          Open Workflow Dialog
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          leadingIcon={<Bell size={16} />}
+                          onClick={() => setModalOpen(true)}
+                        >
+                          Open Review Modal
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          leadingIcon={<Bell size={16} />}
+                          onClick={() => setModelessModalOpen(true)}
+                        >
+                          Open Modeless Dialog
+                        </Button>
+                      </ToolbarCluster>
+                    </div>
+                  </SurfaceCard>
 
-                <SurfaceCard title="Menu Behavior" eyebrow="Popup">
-                  <div className="ds-stack">
-                    <MenuButton
-                      label="Open Action Menu"
-                      items={[
-                        {
-                          id: 'save',
-                          label: 'Save Draft',
-                          description: 'Real handler keeps the menu primitive canon-ready.',
-                          icon: <BookOpen size={14} />,
-                          shortcut: 'S',
-                          onSelect: () => setGalleryTab('surfaces'),
-                        },
-                        {
-                          id: 'checked',
-                          label: 'Checked Item',
-                          description: 'Shared row chrome with explicit checked state.',
-                          icon: <Bell size={14} />,
-                          checked: true,
-                          shortcut: 'C',
-                          onSelect: () => setGalleryTab('controls'),
-                        },
-                        {
-                          id: 'disabled',
-                          label: 'Disabled Item',
-                          description: 'Disabled rows stay visible without a different shell.',
-                          icon: <SlidersHorizontal size={14} />,
-                          disabled: true,
-                          shortcut: 'D',
-                        },
-                      ]}
-                    />
-                  </div>
-                </SurfaceCard>
-
-                <SurfaceCard title="Working Accordions" eyebrow="Disclosure">
-                  <div className="ds-stack">
-                    <AccordionSection
-                      title="Accordion Contract"
-                      meta="Open"
-                      isOpen={controlSections.isOpen('accordion')}
-                      onToggle={() => controlSections.toggle('accordion')}
-                    >
-                      The shared disclosure component now uses real toggle state, so section bodies
-                      can open and close instead of staying stuck open.
-                    </AccordionSection>
-                    <AccordionSection
-                      title="Modal + Popout Coordination"
-                      meta="Overlay"
-                      isOpen={controlSections.isOpen('modal')}
-                      onToggle={() => controlSections.toggle('modal')}
-                    >
-                      Popouts use one dismissable-layer contract, while modals keep a separate
-                      blocking layer with keyboard dismissal.
-                    </AccordionSection>
-                    <AccordionSection
-                      title="Mobile Shell Behavior"
-                      meta="Remap"
-                      isOpen={controlSections.isOpen('mobile')}
-                      onToggle={() => controlSections.toggle('mobile')}
-                    >
-                      Mobile uses overlay drawers for navigation and panels so important surface
-                      areas do not disappear when the layout collapses.
-                    </AccordionSection>
-                  </div>
-                </SurfaceCard>
-              </ResponsiveGrid>
+                  <SurfaceCard title="Working Accordions" eyebrow="Disclosure">
+                    <div className="ds-stack">
+                      <AccordionSection
+                        title="Accordion Contract"
+                        meta="Open"
+                        isOpen={controlSections.isOpen('accordion')}
+                        onToggle={() => controlSections.toggle('accordion')}
+                      >
+                        The shared disclosure component now uses real toggle state, so section bodies
+                        can open and close instead of staying stuck open.
+                      </AccordionSection>
+                      <AccordionSection
+                        title="Modal + Popout Coordination"
+                        meta="Overlay"
+                        isOpen={controlSections.isOpen('modal')}
+                        onToggle={() => controlSections.toggle('modal')}
+                      >
+                        Popouts use one dismissable-layer contract, while modals keep a separate
+                        blocking layer with keyboard dismissal.
+                      </AccordionSection>
+                      <AccordionSection
+                        title="Mobile Shell Behavior"
+                        meta="Remap"
+                        isOpen={controlSections.isOpen('mobile')}
+                        onToggle={() => controlSections.toggle('mobile')}
+                      >
+                        Mobile uses overlay drawers for navigation and panels so important surface
+                        areas do not disappear when the layout collapses.
+                      </AccordionSection>
+                    </div>
+                  </SurfaceCard>
+                </div>
+              </div>
             ) : null}
 
             {galleryTab === 'surfaces' ? (
-              <ResponsiveGrid>
-                <SurfaceCard title="Action Cards" eyebrow="Cards">
-                  <div className="ds-stack">
-                    <ActionCard
-                      title="Artifact Summary Treatment"
-                      description="Nested item anatomy for boards, chat context, and inspector highlights."
-                      meta={<Bell size={16} />}
-                    >
-                      <div className="ds-chip-grid">
-                        <Badge>Library</Badge>
-                        <Badge variant="outline">Inspector</Badge>
-                        <Badge variant="outline">Reusable</Badge>
+              <div className="ds-showcase-columns ds-showcase-columns-surfaces">
+                <div className="ds-showcase-column">
+                  <SurfaceCard title="Action Cards" eyebrow="Cards">
+                    <div className="ds-stack">
+                      <ActionCard
+                        title="Artifact Summary Treatment"
+                        description="Nested item anatomy for boards, chat context, and inspector highlights."
+                        meta={<Bell size={16} />}
+                      >
+                        <div className="ds-chip-grid">
+                          <Badge>Library</Badge>
+                          <Badge variant="outline">Inspector</Badge>
+                          <Badge variant="outline">Reusable</Badge>
+                        </div>
+                      </ActionCard>
+                      <ActionCard
+                        title="Section Safety"
+                        description="Cards now size to their own content naturally instead of stretching each row."
+                        meta={<FolderKanban size={16} />}
+                      />
+                    </div>
+                  </SurfaceCard>
+
+                  <SurfaceCard title="State Cards" eyebrow="Surface">
+                    <div className="ds-state-grid">
+                      <div className="ds-state-card">
+                        <Eyebrow>Default</Eyebrow>
+                        <Text as="span" variant="quiet">Resting surface treatment</Text>
                       </div>
-                    </ActionCard>
-                    <ActionCard
-                      title="Section Safety"
-                      description="Cards now size to their own content naturally instead of stretching each row."
-                      meta={<FolderKanban size={16} />}
+                      <div className="ds-state-card" data-tone="hover">
+                        <Eyebrow>Hover</Eyebrow>
+                        <Text as="span" variant="quiet">Interaction hover state</Text>
+                      </div>
+                      <div className="ds-state-card" data-tone="active">
+                        <Eyebrow>Active</Eyebrow>
+                        <Text as="span" variant="quiet">Selection and focus state</Text>
+                      </div>
+                    </div>
+                  </SurfaceCard>
+
+                  <SurfaceCard title="Empty State" eyebrow="Feedback">
+                    <EmptyStateCard
+                      icon={<FileSearch size={24} />}
+                      title="No components filtered out"
+                      description="Use search, tabs, or the workbench to move through the canon inventory."
+                      actions={
+                        <Button variant="toolbar" leadingIcon={<SearchCode size={14} />}>
+                          Clear Filters
+                        </Button>
+                      }
                     />
-                  </div>
-                </SurfaceCard>
+                  </SurfaceCard>
+                </div>
 
-                <SurfaceCard title="State Cards" eyebrow="Surface">
-                  <div className="ds-state-grid">
-                    <div className="ds-state-card">
-                      <Eyebrow>Default</Eyebrow>
-                      <Text as="span" variant="quiet">Resting surface treatment</Text>
-                    </div>
-                    <div className="ds-state-card" data-tone="hover">
-                      <Eyebrow>Hover</Eyebrow>
-                      <Text as="span" variant="quiet">Interaction hover state</Text>
-                    </div>
-                    <div className="ds-state-card" data-tone="active">
-                      <Eyebrow>Active</Eyebrow>
-                      <Text as="span" variant="quiet">Selection and focus state</Text>
-                    </div>
-                  </div>
-                </SurfaceCard>
-
-                <SurfaceCard title="Empty State" eyebrow="Feedback">
-                  <EmptyStateCard
-                    icon={<FileSearch size={24} />}
-                    title="No components filtered out"
-                    description="Use search, tabs, or the workbench to move through the canon inventory."
+                <div className="ds-showcase-column">
+                  <SurfaceCard
+                    title="Toast Stack"
+                    eyebrow="Feedback"
                     actions={
-                      <Button variant="toolbar" leadingIcon={<SearchCode size={14} />}>
-                        Clear Filters
+                      <Button
+                        variant="toolbar"
+                        size="compact"
+                        leadingIcon={<Bell size={14} />}
+                        onClick={resetToastPreviewItems}
+                      >
+                        Reset Stack
                       </Button>
                     }
-                  />
-                </SurfaceCard>
-
-                <SurfaceCard
-                  title="Toast Stack"
-                  eyebrow="Feedback"
-                  actions={
-                    <Button
-                      variant="toolbar"
-                      size="compact"
-                      leadingIcon={<Bell size={14} />}
-                      onClick={resetToastPreviewItems}
-                    >
-                      Reset Stack
-                    </Button>
-                  }
-                >
-                  <div className="ds-stack">
-                    <Text variant="quiet">
-                      Toasts now sit in the reusable surfaces family and use the existing graph
-                      palette instead of introducing separate notification colors.
-                    </Text>
-                    {toastPreviewItems.length ? (
-                      <ToastStack placement="inline">
-                        {toastPreviewItems.map((item) => (
+                  >
+                    <div className="ds-stack">
+                      <Text variant="quiet">
+                        Toasts now sit in the reusable surfaces family and use the existing graph
+                        palette instead of introducing separate notification colors.
+                      </Text>
+                      {toastPreviewItems.length ? (
+                        <ToastStack placement="inline">
+                          {toastPreviewItems.map((item) => (
                           <Toast
                             key={item.id}
                             tone={item.tone}
@@ -1497,27 +1508,34 @@ export default function App() {
                             description={item.description}
                             meta={item.meta}
                             icon={item.icon}
+                            actionLabel={item.actionLabel}
+                            onAction={
+                              item.actionLabel
+                                ? () => {
+                                    setWorkflowOpen(true);
+                                  }
+                                : undefined
+                            }
                             onDismiss={() =>
                               setToastPreviewItems((current) =>
                                 current.filter((toast) => toast.id !== item.id)
                               )
                             }
-                            actions={
-                              <Button variant="toolbar" size="compact">
-                                {item.actionLabel}
-                              </Button>
-                            }
                           />
-                        ))}
-                      </ToastStack>
-                    ) : (
-                      <PanelNote title="Stack Cleared" meta={<Badge variant="outline">Dismissed</Badge>}>
-                        Restore the sample stack to review the non-blocking feedback surface again.
-                      </PanelNote>
-                    )}
-                  </div>
-                </SurfaceCard>
-              </ResponsiveGrid>
+                          ))}
+                        </ToastStack>
+                      ) : (
+                        <PanelNote
+                          title="Stack Cleared"
+                          meta={<Badge variant="outline">Dismissed</Badge>}
+                        >
+                          Restore the sample stack to review the non-blocking feedback surface again.
+                        </PanelNote>
+                      )}
+                    </div>
+                  </SurfaceCard>
+                </div>
+              </div>
             ) : null}
 
             {galleryTab === 'conversation' ? (

@@ -526,12 +526,6 @@ export function Workbench({
               }
             >
               <div className="ds-stack">
-                <div className="ds-field-row">
-                  <div className="ds-field-row-header">
-                    <Eyebrow>Editing Mode</Eyebrow>
-                    <Eyebrow>{selectedBackgroundMode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Eyebrow>
-                  </div>
-                </div>
                 <div className="ds-stack">
                   <RangeField
                     label="Background Hue"
@@ -745,12 +739,6 @@ export function Workbench({
               }
             >
               <div className="ds-stack">
-                <div className="ds-field-row">
-                  <div className="ds-field-row-header">
-                    <Eyebrow>Editing Mode</Eyebrow>
-                    <Eyebrow>{selectedStructureMode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Eyebrow>
-                  </div>
-                </div>
                 <div className="ds-chip-grid ds-action-row">
                   {(['shell', 'rail', 'panel', 'surface'] as const).map((key) => (
                     <Button

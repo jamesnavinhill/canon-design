@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { IconButton } from '../controls/IconButton';
@@ -12,7 +12,9 @@ export interface ToastProps {
   description?: string;
   icon?: ReactNode;
   meta?: ReactNode;
-  actions?: ReactNode;
+  actionLabel?: string;
+  actionIcon?: ReactNode;
+  onAction?: () => void;
   onDismiss?: () => void;
   tone?: ToastTone;
   className?: string;
@@ -23,11 +25,43 @@ export function Toast({
   description,
   icon,
   meta,
-  actions,
+  actionLabel,
+  actionIcon,
+  onAction,
   onDismiss,
   tone = 'graph-1',
   className,
 }: ToastProps) {
+  const leading = icon || onAction ? (
+    <div className="ds-toast-leading">
+      {icon ? <div className="ds-toast-icon">{icon}</div> : null}
+      {onAction ? (
+        <IconButton
+          appearance="toolbar"
+          className="ds-toast-open-button"
+          label={actionLabel ?? `Open ${title}`}
+          icon={actionIcon ?? <ArrowUpRight size={16} />}
+          onClick={onAction}
+        />
+      ) : null}
+    </div>
+  ) : (
+    <div className="ds-toast-leading-spacer" aria-hidden="true" />
+  );
+  const utility = onDismiss || onAction ? (
+    <div className="ds-toast-utility">
+      {onDismiss ? (
+        <IconButton
+          appearance="ghost"
+          className="ds-toast-dismiss"
+          label={`Dismiss ${title}`}
+          icon={<X size={16} />}
+          onClick={onDismiss}
+        />
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <section
       className={cx('ds-toast', className)}
@@ -37,7 +71,7 @@ export function Toast({
       aria-atomic="true"
     >
       <div className="ds-toast-main">
-        {icon ? <div className="ds-toast-icon">{icon}</div> : null}
+        {leading}
         <div className="ds-toast-copy">
           <div className="ds-toast-copy-row">
             <Heading level="inline" as="span" className="ds-toast-title">
@@ -47,16 +81,8 @@ export function Toast({
           </div>
           {description ? <Text variant="quiet">{description}</Text> : null}
         </div>
-        {onDismiss ? (
-          <IconButton
-            appearance="ghost"
-            label={`Dismiss ${title}`}
-            icon={<X size={16} />}
-            onClick={onDismiss}
-          />
-        ) : null}
+        {utility}
       </div>
-      {actions ? <div className="ds-toast-actions">{actions}</div> : null}
     </section>
   );
 }
