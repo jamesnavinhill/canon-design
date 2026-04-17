@@ -414,8 +414,10 @@ export default function App() {
     themeWorkspace.savedThemes[themeWorkspace.activeThemeId] ?? cloneTheme(DEFAULT_THEME);
   const activeThemeDirty = serializeTheme(theme) !== serializeTheme(activeSavedTheme);
   const [toolbarOffset, setToolbarOffset] = useState(DEFAULT_THEME.shell.toolbarHeight);
-  const [workbenchOpen, setWorkbenchOpen] = useState(false);
-  const [workbenchPlacement, setWorkbenchPlacement] = useState<'left' | 'right'>('right');
+  const [workbenchOpen, setWorkbenchOpen] = useState(
+    () => (typeof window !== 'undefined' ? !window.matchMedia(SHELL_OVERLAY_QUERY).matches : true)
+  );
+  const [workbenchPlacement, setWorkbenchPlacement] = useState<'left' | 'right'>('left');
   const [galleryTab, setGalleryTab] = useState<GalleryTab>('shell');
   const [activeNav, setActiveNav] = useState('workspace');
   const [workspaceId, setWorkspaceId] = useState('workspace-a');

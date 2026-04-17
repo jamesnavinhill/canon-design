@@ -1,5 +1,15 @@
 # Canon Component Productization Plan
 
+Status note, 2026-04-17:
+
+This document records useful cleanup and extraction work completed in the current repo shape.
+
+It should not be treated as the unquestioned target architecture for the next foundation pass if the project resets around:
+
+- plain naming
+- packaged or headless primitives for behavior-heavy areas
+- a rebuilt chat foundation instead of carrying forward the current conversation components
+
 ## Purpose
 
 Define the next productization pass for `design-system/` around the real reusable asset:
@@ -35,7 +45,17 @@ It is not the product boundary we are optimizing for.
 
 These assumptions should now be treated as settled unless we explicitly change them later.
 
-### 1. The workbench ships with the system
+### 1. Plain names only
+
+The next foundation pass should use plain, domain-based names.
+
+That means:
+
+- no new umbrella prefixes
+- no filler adjective wrappers such as `Canonical*`, `Base*`, `Core*`, or similar placeholder names
+- no carrying forward old internal identity terms as the new normal
+
+### 2. The workbench ships with the system
 
 The workbench is not studio-only.
 
@@ -47,11 +67,11 @@ That means:
 - the shell should continue to support an attached workbench
 - workbench controls should remain focused on global system tuning, not page-local configuration
 
-### 2. The reference page is not the end state
+### 3. The reference page is not the end state
 
 The reference page is useful for:
 
-- exercising the canon components
+- exercising the current components
 - dialing in tokens and behavior
 - providing a live reference while the system matures
 
@@ -59,25 +79,46 @@ The reference page is not something we need to over-optimize structurally.
 
 We can move on from it later.
 
-### 3. The main goal is obvious canon structure
+### 4. Behavior-heavy primitives should prefer stronger foundations
+
+Where a mature package or headless primitive clearly handles difficult behavior, accessibility, or state better than homegrown logic, the project should prefer building on that lower layer instead of owning the whole behavior stack from scratch.
+
+Examples include:
+
+- chat behavior
+- split workspace resizing
+- table logic
+- virtualization
+- overlays and selections when custom behavior becomes costly
+
+### 5. The current conversation family is not a keeper asset
+
+The current conversation components are part of the extracted repo state, not a required part of the forward-looking reusable boundary.
+
+That means:
+
+- do not treat `ChatComposer` and `ChatTranscript` as must-keep public primitives
+- do not spend time polishing them into the long-term chat foundation
+- if chat returns to the core surface, rebuild it on better primitives and tooling
+
+### 6. The main goal is obvious structure
 
 The reusable parts should feel:
 
 - simple
 - clean
-- canon
 - obvious to browse
 - obvious to reuse
 
 That means file layout, exports, naming, and styling boundaries matter more than polishing the reference page.
 
-### 4. Documentation moves in parallel with implementation
+### 7. Documentation moves in parallel with implementation
 
 We should not leave docs as a cleanup phase at the end.
 
-As we land each structural/system change, we should update the relevant design-system docs in the same pass.
+As we land each structural or system change, we should update the relevant design-system docs in the same pass.
 
-### 5. Testing comes last
+### 8. Testing comes last
 
 Testing is still required, but it is intentionally the last major phase in this plan.
 
@@ -86,7 +127,7 @@ The right order is:
 1. settle structure
 2. settle systems
 3. settle docs and inventory in parallel
-4. add direct component tests after the canon surface is stable enough to be worth locking down
+4. add direct component tests after the keeper surface is stable enough to be worth locking down
 
 ## Current Canon Surface
 
@@ -115,7 +156,7 @@ That canon layer now materially covers:
 - date-range picking
 - dialog, workflow, and toast surfaces
 - disclosure behavior
-- conversation primitives
+- a current conversation family that exists in repo state but should not be assumed to survive a foundation reset
 - shipped workbench controls
 - token export
 
@@ -376,6 +417,7 @@ This pass is not about:
 - turning the reference page into a polished long-term product
 - spending time over-abstracting reference-only composition
 - treating the workbench as optional or studio-only
+- locking the current conversation family in as the long-term chat foundation
 - reopening the basic shell/component vocabulary unless we find a real defect
 - prematurely extracting the design system into another repository before the reusable layer is cleaner
 
@@ -505,9 +547,12 @@ Recommended coverage:
 - `DateRangePicker` selection, clear, and apply behavior
 - `ModalDialog` dismissal and presentation behavior
 - `WorkflowDialog` dismissal and layout behavior
-- `ChatComposer` submit and disabled states
-- `ChatTranscript` disclosure and empty-state behavior
 - `Workbench` tab and control behavior for core shipped settings
+
+Chat note:
+
+- do not spend test effort locking the current conversation pair if the foundation is moving toward a rebuilt chat layer
+- only add focused chat tests after the replacement chat foundation exists and its public API is intentional
 
 Deliverables:
 
@@ -640,9 +685,10 @@ Testing is last in this plan, but typecheck/build should continue during the int
 
 The next best step is:
 
-1. run the direct component test pass against the now-settled canon surface, starting with dialogs, popovers, and selection-heavy controls
-2. keep the inventory and plan language aligned as the remaining public-boundary cleanup lands
-3. use the focused test additions to confirm the canon surface is actually stable enough for later extraction
+1. pause and decide the keeper-extraction scope versus the clean-reset scope
+2. keep only the genuinely strong shell, workbench, token, and layout ideas as source material
+3. avoid locking the current conversation family forward
+4. keep the inventory and plan language aligned with that reset decision before more productization work lands
 
 ## Summary
 

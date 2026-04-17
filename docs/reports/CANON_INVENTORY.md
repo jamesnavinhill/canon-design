@@ -1,8 +1,14 @@
 # Canon Inventory
 
+Status note, 2026-04-17:
+
+This document describes the current repo boundary inside `src/components/canon/`.
+
+It does not mean every current family should be carried forward unchanged into the next foundation pass.
+
 ## Purpose
 
-Describe the actual reusable boundary inside `design-system/src/components/canon/`.
+Describe the actual reusable boundary inside `src/components/canon/`.
 
 This document is about the shipped canon system:
 
@@ -11,7 +17,8 @@ This document is about the shipped canon system:
 - reusable typography primitives
 - reusable controls
 - reusable surfaces
-- reusable disclosure and conversation primitives
+- reusable disclosure primitives
+- a current conversation family that exists in repo state but should not be assumed to be a keeper asset
 
 The studio page is only a reference consumer of this system.
 
@@ -19,7 +26,7 @@ The studio page is only a reference consumer of this system.
 
 The public canon entry point is:
 
-- `design-system/src/components/canon/index.ts`
+- `src/components/canon/index.ts`
 
 Consumers should prefer importing app-facing reusable pieces from that barrel.
 
@@ -138,13 +145,18 @@ Current public components/hooks:
 
 ### `conversation/`
 
-Owns reusable conversation primitives.
+Current repo conversation components live here, but this family should be treated as reference-state code rather than a locked long-term foundation.
 
 Current public components/types:
 
 - `ChatComposer`
 - `ChatTranscript`
 - `types`
+
+Direction note:
+
+- do not treat this family as required future public API
+- if chat is rebuilt, prefer stronger tooling and lower-level primitives over polishing this pair forward
 
 ### `workbench/`
 
@@ -167,6 +179,8 @@ These assumptions are current and intentional:
 - the type hierarchy is part of the reusable canon API, not just a studio styling detail
 - the studio page is a reference consumer, not the main abstraction target
 - the canon file tree is the real reusable boundary
+- plain names should replace legacy identity naming over time
+- the current conversation family is not automatically part of the long-term keeper set
 
 ## Internal Helpers
 

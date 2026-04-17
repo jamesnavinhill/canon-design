@@ -1,6 +1,6 @@
 # Canon Design System Studio
 
-Standalone design-system app rebuilt as a portable studio for the canon shell and component system.
+Standalone canon app rebuilt as a portable studio for the shell, token, and component system while the fresh application template takes shape.
 
 ## Run
 
@@ -41,4 +41,6 @@ npm run build
 - The workbench can export the current token set as JSON or resolved CSS custom properties, and it now docks left or right inside the shell body instead of floating over the rails.
 - The desktop shell now supports a collapsed sidebar state, and toolbar actions compact to icon-first controls as space tightens.
 - Mobile behavior now uses lighter overlay sheets for sidebar/library/inspector regions instead of full-height blurred takeovers.
-- See `docs/CANON_INVENTORY.md` for the current reusable family ownership and public inventory.
+- See `docs/reports/CANON_INVENTORY.md` for the current reusable family ownership and public inventory.
+- See `docs/reports/2026-04-17-shell-foundation-audit-and-build-plan.md` for the current audit, package recommendations, and phased application plan.
+- See `docs/operations/DESIGN_RULES.md` for the current repo rules and implementation guardrails.
