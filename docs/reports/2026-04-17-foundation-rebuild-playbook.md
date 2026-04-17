@@ -1,175 +1,233 @@
-# Foundation Rebuild Playbook
+# Foundation Rebuild Roadmap
 
 Date: 2026-04-17
 
+Status: Current working plan
+
+This document is the current source of truth for the foundation rebuild. Older audit and productization notes remain useful background, but they should not be treated as parallel roadmap documents.
+
 ## Purpose
 
-Turn the current reset discussion into one concrete build decision:
+Turn the current audit, rebuild notes, and still-relevant parts of the earlier productization plan into one current roadmap for moving from the shell/reference app to a real application foundation.
 
-- where the new app should live
-- what happens to the current showcase app
-- what gets carried forward
-- what gets rebuilt
-- what the first install and implementation steps should be
+## Verified Baseline
 
-## Recommendation
+The points below are confirmed against the repo on 2026-04-17.
 
-Create a new clean app directory for the real foundation rebuild.
+- `npm run build` passes.
+- The current stack is Vite + React + TypeScript.
+- Current scripts are `dev`, `build`, `typecheck`, and `preview`.
+- There is no router yet.
+- There is no lint, unit test, or e2e setup yet.
+- `src/App.tsx` is still a single 1,667-line reference consumer.
+- Legacy identity is still present in `package.json`, `index.html`, and local storage keys.
+- `ds-*` is still widespread: 2,161 occurrences across 57 files in `src/`.
+- The current app is still primarily a shell foundation and reference surface, not a production-ready application structure.
 
-Do not try to purify the current extracted showcase app in place.
+## Working Rebuild Direction
 
-This means:
+This roadmap is written around the recommended reset path:
 
-- the current app becomes reference material
-- the new app becomes the real foundation
-- the future `/lab` route belongs to the new app, not the current showcase page
+- create a new clean app directory for the real rebuild
+- keep the current app available as reference material during the rebuild
+- stop treating the current showcase runtime as the long-term foundation
+- rebuild the forward-looking app in plain-named directories
+- keep `/lab` in the new app as the internal tooling and exploration route
 
-## Why A New Directory Wins
+If the team decides not to rebuild in a new directory, this roadmap should be revised before implementation begins.
 
-The current repo still carries too much extracted-project shape:
+## End State
 
-- legacy naming
-- a bloated reference page as the main runtime
-- demo chat components that are not keeper assets
-- custom logic mixed into areas that were supposed to be built on stronger primitives
+The rebuild should produce:
 
-Trying to clean that in place creates the wrong incentives:
+- a real routed application instead of a single reference page
+- a reusable shell and shipped workbench
+- a fully customizable, exportable design system underneath that shell
+- a primary workspace surface built on stronger primitives where behavior is complex
+- dashboards, settings, and an internal `/lab` route
+- a foundation that can support more than one app later without carrying forward old identity or demo structure
 
-- pressure to save components we already do not want
-- more accidental carryover of naming and structure
-- more ambiguity about what is legacy versus real foundation
-- more time spent editing around old assumptions
+## Role Of The Current App During The Rebuild
 
-A new directory keeps the reset honest.
+During the rebuild, the current app should be treated as:
 
-## Decision Score
+- reference material for shell proportions, layout behavior, and tuning ideas
+- a source for selective extraction of genuinely strong system pieces
+- a place to confirm theme behavior, saved sizing, and workbench patterns that still deserve to survive
 
-If the goal is to build the foundation the project actually intended, the choice scores roughly like this:
-
-- new clean app directory: `90 / 100`
-- reuse this app in place: `52 / 100`
-
-Short explanation:
-
-- in-place reuse wins on short-term convenience
-- a new directory wins on clarity, maintainability, naming discipline, and alignment with the actual product goal
-
-## What Happens To The Current App
-
-Right now, nothing destructive needs to happen.
-
-The current app should be treated as:
-
-- a reference artifact
-- a place to inspect shell proportions and layout ideas
-- a place to inspect token and theme behavior that may still be useful
-- a source for selective extraction of genuinely strong pieces
-
-The current app should not be treated as:
+During the rebuild, the current app should not be treated as:
 
 - the active long-term foundation
-- the thing we keep shipping from while claiming to reset
-- a page structure we intend to preserve
-- a chat foundation worth polishing forward
+- the place where new product architecture continues to accumulate
+- the future `/lab`
+- the chat foundation to polish forward
 
-Important clarification:
+## Keeper Assets To Carry Forward Intentionally
 
-- the current bloated showcase page is not the future `/lab`
-- the future `/lab` is a new route inside the rebuilt app
-- it should contain the new primitives, new patterns, and new experiments only
+These should survive only through deliberate extraction or rebuild work:
 
-## What We Keep Versus Rebuild
+- shell proportions, shell shape, and the current spatial behavior that already feel right
+- sidebar, rails, toolbar, menu, modal, and control foundations that are already strong
+- workbench behavior, docking, look, setup, and flow
+- the principle that the workbench ships with the system and is not studio-only
+- the current theme system as a foundation, including all current theme controls, all current theme presets, saved state, exportability, and the good persistence logic already in place
+- the current typography direction, which is already strong enough to preserve while leaving room for more font options later
+- resizable layout behavior and saved sizing where it already works well
+- any layout pieces that are already genuinely clean
+- a new global spacing or app-padding control so shell rhythm can be tuned at the app level
 
-### Keep As Source Material
+## Do Not Carry Forward By Default
 
-Keep only the parts that are actually strong enough to justify extraction:
+These are not keeper assets unless a specific piece proves it belongs:
 
-- shell proportions and spatial decisions that still feel right - these all feel good. wed like more dials around a collective app level padding, spacing slider tbh. oen thing were missing now that we keep wishign we had
-- workbench concepts and tuning behaviors that are still useful - we love our workbench behaviour. the docking. the look, the setup and flow. it works well for us right now. of course it likely needs rebuilt into the new primitive systems but the contents should not be left behind
-- token ideas
-- typography decisions worth preserving All of our typography is solid. we will eventually add more fonts, and if anything we could maybe add or make some of the family and placings more obvious.. butit feels pretty great now
-- any layout pieces that are already genuinely clean. the goal would be to have multiple shells, or ability to shange the layouts. sidebar or top nav / side rails or no, etc.. but this will come as we go. for now we like our first piece as-is. the shell is also something we worked alot on and hsoul dbe rpeserved as much as possible in shape/behavior, while making it clean and rebuilt for the new app if necessary.
-
-These should be copied intentionally, not inherited by default. Our theme system is VITAL. ALL controls are required. plus will add more as we introduce the new items where it makes sense. / the layout sizing is resizeable and saved. all of our themes are required to bring over. all the good save logic. some plans to expand and clean them up a bit should be folded in. so dark/light are split in the intended ways. this is the foundation of this app, a fully customizeable, exportable design system. we have a great start there and this is our most valuable resource to reuse as much aspossible plus build out as necessary.
-
-### Do Not Carry Forward By Default
-
-These should not be preserved automatically:
-
-- the current showcase page
+- the current `src/App.tsx` showcase/reference page
 - the current conversation family
-- legacy naming
-- demo-first directory shape
-- one-off custom behavior in areas where proper primitives or engines should be used instead
+- legacy naming such as `ds`, `canon`, `studio`, and `showcase`
+- demo-first folder structure
+- page-local bespoke behavior in areas that should be rebuilt on stronger primitives or engines
+- broad copy-forward of old code just because it already exists
 
-### Rebuild Properly
+## Non-Negotiable Roadmap Rules
 
-These should be rebuilt as part of the new foundation:
+- Use plain, domain-based names.
+- Do not replace old prefixes with new umbrella prefixes.
+- Give each reusable concern one obvious home in the file tree.
+- Keep one visual system. External packages may provide behavior, state, data, or accessibility, but not the visible product language.
+- Put tokens first. New spacing, radii, motion, shadow, color, and layout values should enter through the shared system.
+- Build shared primitives before page-local copies when a pattern will repeat.
+- Prefer direct page surfaces, section rhythm, and dividers over box-in-box composition.
+- Replace legacy pieces as cleaner replacements land.
+- Keep docs current in the same pass as structural or system changes.
+- Add tests after boundaries and APIs are intentionally stable enough to lock.
+- Keep the workbench focused on global system tuning, not page-local configuration.
 
-- routing and page structure
-- chat UI
-- split workspace
-- dashboard surfaces
-- table wrappers
-- chart wrappers
-- the new internal `/lab`
+## Technical Direction
 
-## Technical Strategy For The New App
-
-The new app should keep the current high-level technology direction:
+The rebuild should stay on:
 
 - Vite
 - React
 - TypeScript
-- shared CSS-variable design system
+- a shared CSS-variable design system
 
-The difference is in how behavior-heavy areas are built.
-
-### Own Locally
-
-The repo should still own:
+The repo should continue to own:
 
 - final component APIs
-- names
 - markup structure
-- theme bindings
-- token system
 - visual language
+- theme bindings
+- tokens
+- persistence model
 - wrapper components
 
-### Import Under The Hood
+The repo should intentionally use stronger packages underneath where they reduce bespoke logic:
 
-Use stronger primitives or engines underneath where they clearly reduce bespoke logic:
+- chat behavior: `ai` and `@ai-sdk/react`
+- split layout: `react-resizable-panels`
+- tables: `@tanstack/react-table`
+- virtualization: `@tanstack/react-virtual` when needed
+- charts: `recharts`
+- overlays, selections, and accessibility-heavy behavior: low-level primitives only when clearly justified
 
-- chat behavior: AI SDK
-- split layout behavior: `react-resizable-panels`
-- table logic: TanStack Table
-- virtualization: TanStack Virtual
-- charts: Recharts
-- overlays, selections, and complex accessibility behavior: only if needed, via a low-level primitive library
+This phase should not introduce a new Tailwind or shadcn baseline, and it should not switch the platform to Next.js.
 
-The important rule is:
+## Theme And Persistence Requirements
 
-- app code should depend on repo-owned components
-- repo-owned components may depend on external primitives or engines underneath
+- Editing in dark mode should affect only dark mode.
+- Editing in light mode should affect only light mode.
+- This mode-aware behavior must apply to surfaces, accent, graph colors, background, selected theme preset, and dividers.
+- This behavior should follow the current mode context automatically, without extra mode-specific control clutter.
+- All current theme controls that are part of the real tuning surface are expected to survive the rebuild.
+- New controls may be added later, but the rebuild should start by matching the current tuning surface rather than shrinking it.
+- The new foundation should preserve and clean up the existing save and export flow rather than discard it.
+- Layout sizing persistence should survive, but the final storage keys should be renamed once the new app identity is settled.
 
-## Recommended First Install
+## Target App Shape
 
-Start the new app lean.
+The first real rebuilt app should include:
 
-Base install:
+- a shared shell
+- a workspace route
+- a dashboards route
+- a settings route
+- an internal `/lab` route
+- a token and theme layer
+- a workbench connection point
+- a clear path to charts, tables, viewers, and future content surfaces
 
-- Vite
-- React
-- TypeScript
+A reasonable target structure is:
+
+```text
+src/
+  app/
+    providers/
+    routes/
+    shell/
+  components/
+    chat/
+    dashboard/
+    data-display/
+    layout/
+    settings/
+    viewer/
+    workbench/
+  features/
+    dashboards/
+    lab/
+    settings/
+    workspace/
+  system/
+    persistence/
+    schema/
+    theme/
+```
+
+The exact folder names can move slightly, but the separation between app shell, shared components, feature composition, and system code should stay clear.
+
+## Roadmap Phases
+
+### Phase 0: Lock The Rebuild Boundary
+
+Goal:
+
+- turn the reset recommendation into an executable plan before code starts
+
+Deliver:
+
+- confirm the new-directory rebuild approach
+- define what remains reference-only versus what must be rebuilt
+- record keeper assets that must survive
+- decide how the current app stays available during the rebuild
+- decide the naming boundary and storage migration rule
+
+Exit criteria:
+
+- the rebuild boundary is documented clearly enough that implementation can start without reopening the same decision each day
+
+### Phase 1: Bootstrap The New App
+
+Goal:
+
+- create a clean foundation that is safe to grow
+
+Deliver:
+
+- create the new app directory
+- add the route layer and provider scaffolding
+- add baseline quality tooling
+- install the base stack and the first behavior packages
+- establish empty `/workspace`, `/dashboards`, `/settings`, and `/lab` routes
+
+Recommended baseline dependencies:
+
 - React Router
 - ESLint
+- `typescript-eslint`
+- `eslint-plugin-react-hooks`
+- accessibility linting
 - Vitest
 - Testing Library
 - Playwright
-
-First feature dependencies:
-
 - `react-resizable-panels`
 - `@tanstack/react-table`
 - `@tanstack/react-virtual`
@@ -177,79 +235,163 @@ First feature dependencies:
 - `ai`
 - `@ai-sdk/react`
 
-Optional later decision, not day-one mandatory:
+Exit criteria:
 
-- a low-level primitive library for overlays, selection, and accessibility-heavy components
+- the new app boots, routes resolve, and the minimum quality gates run
 
-## What The New App Should Look Like At The Start
+### Phase 2: Carry Over The System Foundation
 
-The first meaningful new app should be small and clean:
+Goal:
 
-- route shell
-- workspace route
-- settings route
-- dashboards route
-- `/lab` route
-- token and theme layer
-- workbench connection point
+- port the strongest reusable system pieces before page work spreads
 
-It should not start with:
+Deliver:
 
-- a giant everything-page
-- a recreated showcase runtime
-- copied demo chat components
-- broad carryover of old naming
+- bring forward tokens, theme foundations, and typography
+- add the missing global spacing or app-padding control
+- implement proper dark and light mode separation
+- bring forward the save, export, and sizing persistence that are worth keeping
+- keep new code free of legacy prefixes and filler wrapper naming
 
-## Suggested Build Sequence
+Exit criteria:
 
-1. Create the new clean app directory.
-2. Install the new base stack and tooling.
-3. Set up route skeleton and empty page structure.
-4. Port only the keeper token and theme pieces.
-5. Rebuild shell layout on clean naming.
-6. Rebuild split workspace on `react-resizable-panels`.
-7. Rebuild chat on AI SDK.
-8. Build shared table wrappers on TanStack Table.
-9. Build shared chart wrappers on Recharts.
-10. Add a new internal `/lab` route for the rebuilt system only.
+- the new app can express the design system and its tuning model without depending on the old reference page
 
-## What We Should Not Do
+### Phase 3: Rebuild The Shell And Workbench
 
-Avoid this sequence:
+Goal:
 
-1. delete half of the current app
-2. keep shipping from the bloated showcase page
-3. slowly rename things while still relying on old extracted structure
-4. save components we already know we do not want
+- re-establish the strongest current asset on clean foundations
 
-That path burns time without giving the reset a clean boundary.
+Deliver:
 
-## Migration And Cutover Vision
+- rebuild the sidebar, rails, toolbar, and shell framing
+- rebuild the attached workbench with preserved docking behavior
+- keep the desktop workbench default open on the left unless that behavior is intentionally changed later
+- preserve resize and restore behavior where it matters
+- establish `/lab` as the internal tooling surface in the new app
 
-The transition should be simple:
+Exit criteria:
 
-- current app remains untouched while the new app is created
-- useful ideas are copied over intentionally
-- the new app becomes the active foundation as soon as it has a viable shell
-- the current app can be archived, left as reference, or retired later
+- the new app has a viable shell that already feels like the intended product foundation
 
-There is no need to retire the current showcase page before the new app exists.
+### Phase 4: Land The Primary Workspace
 
-There is also no need to keep improving the current showcase page if the rebuild decision is real.
+Goal:
 
-## Final Recommendation
+- deliver the first real product page
 
-The cleanest path is:
+Deliver:
 
-- stop treating the current showcase app as the active foundation
-- create a new clean app directory
-- use the current repo only as reference and selective extraction material
-- rebuild the real foundation on proper primitives and engines
-- add a new `/lab` later inside the rebuilt app
+- shared split workspace primitive built on `react-resizable-panels`
+- viewer host for browser, PDF, media, and future viewer types
+- rebuilt chat foundation on AI SDK behavior
+- a standard, bottom-anchored composer and transcript flow
 
-That gives the project:
+Exit criteria:
 
-- a cleaner reset
-- clearer naming
-- less accidental carryover
-- a better shot at the architecture that was originally intended
+- the workspace route works as the first real application surface and no longer depends on the old conversation components
+
+### Phase 5: Land Dashboards And Data Display
+
+Goal:
+
+- establish reusable structured data surfaces
+
+Deliver:
+
+- dashboard layout model
+- 1 to 3 column dashboard structures
+- chart wrappers
+- table wrappers
+- saved dashboard state
+
+Exit criteria:
+
+- dashboards are built from shared data-display primitives rather than page-local one-offs
+
+### Phase 6: Land Settings Architecture
+
+Goal:
+
+- establish a stable configuration page pattern
+
+Deliver:
+
+- shared settings scaffold
+- category tabs such as general, profile, configuration, and data
+- consistent section rhythm, field structure, and page flow
+
+Exit criteria:
+
+- settings pages are straightforward to extend without inventing new layout rules
+
+### Phase 7: Stabilize, Document, And Cut Over
+
+Goal:
+
+- move from rebuild effort to the real active foundation
+
+Deliver:
+
+- continue legacy naming cleanup in all active surfaces
+- keep docs aligned with what actually shipped
+- add focused tests once the rebuilt boundaries are stable
+- move active development to the new app as soon as shell plus workspace are viable
+- decide whether the old app is archived, retained as reference, or retired later
+
+Exit criteria:
+
+- the new app is the active foundation and the old showcase is no longer treated as the product base
+
+## Cross-Cutting Expectations
+
+### Documentation
+
+- update this roadmap when direction changes
+- update design rules and any component or system inventory in the same pass as meaningful structural work
+- keep the distinction clear between reference-only code and real foundation code
+
+### Validation
+
+Minimum validation during the rebuild:
+
+- `npm run typecheck`
+- `npm run build`
+
+When linting and tests are added to the new app, use the narrowest credible lint or test command for the changed area in addition to the global checks.
+
+### Naming Cleanup
+
+- do not add new `ds`, `canon`, `studio`, or `showcase` naming in new code
+- do not replace those with another umbrella prefix
+- treat naming cleanup as incomplete until the active app surfaces are free of legacy identity terms
+
+## Open Decisions Before Phase 1 Starts
+
+- What is the exact new app location and name?
+- Does the current app remain at the repo root during the rebuild, or does it move under a clearly named reference path once the new app exists?
+- Should the new app intentionally reset persistence keys, or should it migrate old local storage values where practical?
+- What should become the first real landing route once routing exists: `/`, `/workspace`, or a redirect into the primary working surface?
+
+## What Not To Do
+
+Avoid this path:
+
+- keep shipping from the bloated reference page while claiming the reset is underway
+- copy the whole current app into a new directory and rename it slowly
+- save the current conversation family by default
+- keep introducing new legacy naming in parallel with cleanup plans
+- introduce a visually opinionated dependency as the new baseline
+- over-optimize the old reference app instead of building the new one
+
+## Recommended Near-Term Decision Order
+
+1. Confirm the rebuild boundary and the new-app location.
+2. Write the keeper inventory for shell, workbench, theme, typography, and persistence.
+3. Bootstrap the new app and tooling.
+4. Port the system foundation.
+5. Rebuild shell and workbench.
+6. Land workspace.
+7. Land dashboards and settings.
+8. Stabilize, document, and cut over.
