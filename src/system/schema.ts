@@ -503,15 +503,6 @@ const BLUEBERRY_THEME: StudioTheme = {
 
 const DEFAULT_THEME_DARK_SURFACES = SURFACE_PRESETS.find((p) => p.id === 'midnight')!.surfaces.dark;
 
-export const THEME_TEMPLATES: ThemeTemplate[] = [
-  {
-    id: 'blueberry',
-    label: 'Blueberry',
-    description: 'Your exported blueberry theme, preserved as-is for the full-theme picker.',
-    theme: BLUEBERRY_THEME,
-  },
-];
-
 export const DEFAULT_THEME: StudioTheme = {
   ...BLUEBERRY_THEME,
   surfaces: {
@@ -600,3 +591,79 @@ export const cloneTheme = (theme: StudioTheme): StudioTheme => ({
   shell: { ...theme.shell },
   controls: { ...theme.controls },
 });
+
+const createThemeFromSurfacePreset = (preset: SurfacePreset): StudioTheme => {
+  const baseTheme = cloneTheme(DEFAULT_THEME);
+
+  return {
+    ...baseTheme,
+    surfaces: {
+      dark: {
+        shell: { ...preset.surfaces.dark.shell },
+        panel: { ...preset.surfaces.dark.panel },
+        rail: { ...preset.surfaces.dark.rail },
+        surface: { ...preset.surfaces.dark.surface },
+      },
+      light: {
+        shell: { ...preset.surfaces.light.shell },
+        panel: { ...preset.surfaces.light.panel },
+        rail: { ...preset.surfaces.light.rail },
+        surface: { ...preset.surfaces.light.surface },
+      },
+    },
+    background: {
+      ...baseTheme.background,
+      dark: { ...preset.surfaces.dark.shell },
+      light: { ...preset.surfaces.light.shell },
+    },
+  };
+};
+
+export const DEFAULT_THEME_TEMPLATE: ThemeTemplate = {
+  id: 'default',
+  label: 'Default',
+  description: 'The shipped canon default theme.',
+  theme: DEFAULT_THEME,
+};
+
+const CUSTOM_THEME_TEMPLATES: ThemeTemplate[] = [
+  {
+    id: 'custom-1',
+    label: 'Aspen',
+    description: 'Custom theme slot seeded from the shipped default theme.',
+    theme: cloneTheme(DEFAULT_THEME),
+  },
+  {
+    id: 'custom-2',
+    label: 'Suyra',
+    description: 'Custom theme slot seeded from the shipped default theme.',
+    theme: cloneTheme(DEFAULT_THEME),
+  },
+  {
+    id: 'custom-3',
+    label: 'Vesper',
+    description: 'Custom theme slot seeded from the shipped default theme.',
+    theme: cloneTheme(DEFAULT_THEME),
+  },
+];
+
+export const THEME_TEMPLATES: ThemeTemplate[] = [
+  {
+    id: 'blueberry',
+    label: 'Blueberry',
+    description: 'Your exported blueberry theme, preserved as-is for the full-theme picker.',
+    theme: BLUEBERRY_THEME,
+  },
+  ...SURFACE_PRESETS.map((preset) => ({
+    id: preset.id,
+    label: preset.label,
+    description: preset.description,
+    theme: createThemeFromSurfacePreset(preset),
+  })),
+  ...CUSTOM_THEME_TEMPLATES,
+];
+
+export const THEME_LIBRARY_TEMPLATES: ThemeTemplate[] = [
+  DEFAULT_THEME_TEMPLATE,
+  ...THEME_TEMPLATES,
+];

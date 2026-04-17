@@ -1,14 +1,11 @@
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { buildThemeCssText, buildThemeCssVars } from '../../../system/cssVars';
 import {
   BACKGROUND_VARIANTS,
-  DEFAULT_THEME,
-  SURFACE_PRESETS,
+  DEFAULT_THEME_TEMPLATE,
   THEME_TEMPLATES,
-  cloneTheme,
-  createDefaultGraphs,
   getFontOptionsForRole,
   type FontRole,
   type StudioTheme,
@@ -70,7 +67,16 @@ export interface WorkbenchProps {
   onClose: () => void;
   onMove: (placement: 'left' | 'right') => void;
   theme: StudioTheme;
+  savedTheme: StudioTheme;
+  previewMode: StudioTheme['mode'];
   setTheme: (updater: (current: StudioTheme) => StudioTheme) => void;
+  activeThemeId: string;
+  onSelectTheme: (themeId: string) => void;
+  onSaveTheme: () => void;
+  onRevertTheme: () => void;
+  onFactoryResetTheme: () => void;
+  onFactoryResetAll: () => void;
+  themeDirty: boolean;
 }
 
 export function Workbench({
@@ -80,27 +86,29 @@ export function Workbench({
   onClose,
   onMove,
   theme,
+  savedTheme,
+  previewMode,
   setTheme,
+  activeThemeId,
+  onSelectTheme,
+  onSaveTheme,
+  onRevertTheme,
+  onFactoryResetTheme,
+  onFactoryResetAll,
+  themeDirty,
 }: WorkbenchProps) {
   const [activeTab, setActiveTab] = useState<WorkbenchTab>('theme');
-  const [selectedBackgroundMode, setSelectedBackgroundMode] = useState<'dark' | 'light'>(theme.mode);
-  const [selectedStructureMode, setSelectedStructureMode] = useState<'dark' | 'light'>(theme.mode);
   const [selectedStructureKey, setSelectedStructureKey] = useState<
     'shell' | 'panel' | 'rail' | 'surface'
   >('panel');
-  const [selectedPresetMode, setSelectedPresetMode] = useState<'both' | 'dark' | 'light'>('both');
   const [activeGraphIndex, setActiveGraphIndex] = useState<number>(0);
   const [activeFontRole, setActiveFontRole] = useState<FontRole>('ui');
   const [openTypeSections, setOpenTypeSections] = useState<string[]>([]);
   const [openThemeSections, setOpenThemeSections] = useState<string[]>([]);
   const [openShellSections, setOpenShellSections] = useState<string[]>([]);
   const [openExportSections, setOpenExportSections] = useState<string[]>([]);
-
-  useEffect(() => {
-    setSelectedBackgroundMode(theme.mode);
-    setSelectedStructureMode(theme.mode);
-  }, [theme.mode]);
-
+  const selectedBackgroundMode = previewMode;
+  const selectedStructureMode = previewMode;
   const selectedBackground = theme.background[selectedBackgroundMode];
   const selectedStructure = theme.surfaces[selectedStructureMode][selectedStructureKey];
   const exportJson = buildExportJson(theme);
@@ -113,75 +121,22 @@ export function Workbench({
   const railReadout = splitColorReadout(themeCssVars['--ds-rail']);
   const panelReadout = splitColorReadout(themeCssVars['--ds-panel']);
   const surfaceReadout = splitColorReadout(themeCssVars['--ds-surface']);
-  const themeChoiceOptions = [
-    ...THEME_TEMPLATES.map((template) => ({
-      id: `theme:${template.id}`,
-      label: template.label,
-    })),
-    ...SURFACE_PRESETS.map((preset) => ({
-      id: `surface:${preset.id}`,
-      label: preset.label,
-    })),
-  ];
-  const activeThemeChoiceId = (() => {
-    const activeThemeTemplate = THEME_TEMPLATES.find(
-      (template) =>
-        JSON.stringify(theme.surfaces) === JSON.stringify(template.theme.surfaces) &&
-        JSON.stringify(theme.background) === JSON.stringify(template.theme.background)
+  const themeChoiceOptions = THEME_TEMPLATES.map((template) => ({
+    id: template.id,
+    label: template.label,
+  }));
+  const activeThemeChoiceId =
+    activeThemeId === DEFAULT_THEME_TEMPLATE.id ? '' : activeThemeId;
+  const confirmFactoryReset = (scope: 'theme' | 'all') => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    return window.confirm(
+      scope === 'theme'
+        ? 'Reset the selected theme back to its factory starting point? This replaces the saved theme and its current draft.'
+        : 'Reset every theme back to its factory starting point? This replaces all saved themes and drafts.'
     );
-
-    if (activeThemeTemplate) {
-      return `theme:${activeThemeTemplate.id}`;
-    }
-
-    const activeSurfacePreset = SURFACE_PRESETS.find((preset) =>
-      selectedPresetMode === 'both'
-        ? JSON.stringify(theme.surfaces) === JSON.stringify(preset.surfaces)
-        : selectedPresetMode === 'dark'
-          ? JSON.stringify(theme.surfaces.dark) === JSON.stringify(preset.surfaces.dark)
-          : JSON.stringify(theme.surfaces.light) === JSON.stringify(preset.surfaces.light)
-    );
-
-    return activeSurfacePreset ? `surface:${activeSurfacePreset.id}` : '';
-  })();
-
-  const applySurfacePreset = (presetId: string) => {
-    const preset = SURFACE_PRESETS.find((candidate) => candidate.id === presetId);
-    if (!preset) {
-      return;
-    }
-
-    setTheme((current) => {
-      const nextSurfaces = { ...current.surfaces };
-      const nextBackground = { ...current.background };
-      if (selectedPresetMode === 'both' || selectedPresetMode === 'dark') {
-        nextSurfaces.dark = preset.surfaces.dark;
-        nextBackground.dark = { ...preset.surfaces.dark.shell };
-      }
-      if (selectedPresetMode === 'both' || selectedPresetMode === 'light') {
-        nextSurfaces.light = preset.surfaces.light;
-        nextBackground.light = { ...preset.surfaces.light.shell };
-      }
-      return {
-        ...current,
-        surfaces: nextSurfaces,
-        background: nextBackground,
-      };
-    });
-  };
-
-  const handleThemeChoiceChange = (value: string) => {
-    if (value.startsWith('theme:')) {
-      const template = THEME_TEMPLATES.find((candidate) => `theme:${candidate.id}` === value);
-      if (template) {
-        setTheme(() => cloneTheme(template.theme));
-      }
-      return;
-    }
-
-    if (value.startsWith('surface:')) {
-      applySurfacePreset(value.replace('surface:', ''));
-    }
   };
 
   return (
@@ -218,7 +173,7 @@ export function Workbench({
         {activeTab === 'theme' ? (
           <div className="ds-stack">
             <AccordionSection
-              title="Templates"
+              title="Themes"
               isOpen={openThemeSections.includes('templates')}
               onToggle={() =>
                 setOpenThemeSections((current) =>
@@ -229,43 +184,64 @@ export function Workbench({
               }
               showActionsWhenOpenOnly
               actions={
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setTheme((current) => ({
-                      ...current,
-                      surfaces: cloneTheme(DEFAULT_THEME).surfaces,
-                    }))
-                  }
-                >
+                <Button variant="ghost" onClick={onRevertTheme}>
                   Reset
                 </Button>
               }
             >
-              <div className="ds-stack">
-                <div className="ds-field-row">
-                  <div className="ds-field-row-header">
-                    <Eyebrow>Apply To</Eyebrow>
-                  </div>
-                  <SegmentedTabs
-                    value={selectedPresetMode}
-                    onChange={(value) => setSelectedPresetMode(value as 'both' | 'dark' | 'light')}
-                    size="compact"
-                    items={[
-                      { id: 'both', label: 'Both' },
-                      { id: 'dark', label: 'Dark Only' },
-                      { id: 'light', label: 'Light Only' },
-                    ]}
-                    stretch
-                  />
-                </div>
+              <div className="ds-workbench-theme-library">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  data-active={activeThemeId === DEFAULT_THEME_TEMPLATE.id ? 'true' : undefined}
+                  onClick={() => onSelectTheme(DEFAULT_THEME_TEMPLATE.id)}
+                >
+                  {DEFAULT_THEME_TEMPLATE.label}
+                </Button>
                 <OptionGroup
+                  className="ds-workbench-theme-options"
                   columns={3}
                   presentation="choice-grid"
                   value={activeThemeChoiceId}
-                  onChange={handleThemeChoiceChange}
+                  onChange={onSelectTheme}
                   options={themeChoiceOptions}
                 />
+                <div className="ds-workbench-theme-save">
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={onSaveTheme}
+                    disabled={!themeDirty}
+                  >
+                    Save Theme
+                  </Button>
+                  <div className="ds-workbench-theme-factory-actions">
+                    <Button
+                      variant="secondary"
+                      size="compact"
+                      fullWidth
+                      onClick={() => {
+                        if (confirmFactoryReset('theme')) {
+                          onFactoryResetTheme();
+                        }
+                      }}
+                    >
+                      Factory Theme
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="compact"
+                      fullWidth
+                      onClick={() => {
+                        if (confirmFactoryReset('all')) {
+                          onFactoryResetAll();
+                        }
+                      }}
+                    >
+                      Factory All
+                    </Button>
+                  </div>
+                </div>
               </div>
             </AccordionSection>
 
@@ -286,7 +262,7 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      controls: { ...DEFAULT_THEME.controls },
+                      controls: { ...savedTheme.controls },
                     }))
                   }
                 >
@@ -333,7 +309,7 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      accent: { ...DEFAULT_THEME.accent },
+                      accent: { ...savedTheme.accent },
                     }))
                   }
                 >
@@ -412,7 +388,7 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      graphs: createDefaultGraphs(current.accent),
+                      graphs: savedTheme.graphs.map((graph) => ({ ...graph })),
                     }))
                   }
                 >
@@ -537,7 +513,11 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      background: { ...DEFAULT_THEME.background },
+                      background: {
+                        ...savedTheme.background,
+                        dark: { ...savedTheme.background.dark },
+                        light: { ...savedTheme.background.light },
+                      },
                     }))
                   }
                 >
@@ -548,17 +528,9 @@ export function Workbench({
               <div className="ds-stack">
                 <div className="ds-field-row">
                   <div className="ds-field-row-header">
-                    <Eyebrow>Tuning Mode</Eyebrow>
+                    <Eyebrow>Editing Mode</Eyebrow>
+                    <Eyebrow>{selectedBackgroundMode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Eyebrow>
                   </div>
-                  <SegmentedTabs
-                    value={selectedBackgroundMode}
-                    onChange={(value) => setSelectedBackgroundMode(value as 'dark' | 'light')}
-                    items={[
-                      { id: 'dark', label: 'Dark Mode' },
-                      { id: 'light', label: 'Light Mode' },
-                    ]}
-                    stretch
-                  />
                 </div>
                 <div className="ds-stack">
                   <RangeField
@@ -751,7 +723,20 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      surfaces: cloneTheme(DEFAULT_THEME).surfaces,
+                      surfaces: {
+                        dark: {
+                          shell: { ...savedTheme.surfaces.dark.shell },
+                          panel: { ...savedTheme.surfaces.dark.panel },
+                          rail: { ...savedTheme.surfaces.dark.rail },
+                          surface: { ...savedTheme.surfaces.dark.surface },
+                        },
+                        light: {
+                          shell: { ...savedTheme.surfaces.light.shell },
+                          panel: { ...savedTheme.surfaces.light.panel },
+                          rail: { ...savedTheme.surfaces.light.rail },
+                          surface: { ...savedTheme.surfaces.light.surface },
+                        },
+                      },
                     }))
                   }
                 >
@@ -762,17 +747,9 @@ export function Workbench({
               <div className="ds-stack">
                 <div className="ds-field-row">
                   <div className="ds-field-row-header">
-                    <Eyebrow>Tuning Mode</Eyebrow>
+                    <Eyebrow>Editing Mode</Eyebrow>
+                    <Eyebrow>{selectedStructureMode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Eyebrow>
                   </div>
-                  <SegmentedTabs
-                    value={selectedStructureMode}
-                    onChange={(v) => setSelectedStructureMode(v as 'dark' | 'light')}
-                    items={[
-                      { id: 'dark', label: 'Dark Mode' },
-                      { id: 'light', label: 'Light Mode' },
-                    ]}
-                    stretch
-                  />
                 </div>
                 <div className="ds-chip-grid ds-action-row">
                   {(['shell', 'rail', 'panel', 'surface'] as const).map((key) => (
@@ -910,7 +887,7 @@ export function Workbench({
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    const defaultId = DEFAULT_THEME.typography[activeFontRole];
+                    const defaultId = savedTheme.typography[activeFontRole];
                     setTheme((current) => ({
                       ...current,
                       typography: {
@@ -918,7 +895,7 @@ export function Workbench({
                         [activeFontRole]: defaultId,
                         profiles: {
                           ...current.typography.profiles,
-                          [activeFontRole]: { ...DEFAULT_THEME.typography.profiles[activeFontRole] },
+                          [activeFontRole]: { ...savedTheme.typography.profiles[activeFontRole] },
                         },
                       },
                     }));
@@ -1082,8 +1059,8 @@ export function Workbench({
                       ...current,
                       typography: {
                         ...current.typography,
-                        size: DEFAULT_THEME.typography.size,
-                        weight: DEFAULT_THEME.typography.weight,
+                        size: savedTheme.typography.size,
+                        weight: savedTheme.typography.weight,
                       },
                     }))
                   }
@@ -1147,11 +1124,11 @@ export function Workbench({
                       ...current,
                       shell: {
                         ...current.shell,
-                        sidebarWidth: DEFAULT_THEME.shell.sidebarWidth,
-                        railWidth: DEFAULT_THEME.shell.railWidth,
-                        utilityWidth: DEFAULT_THEME.shell.utilityWidth,
-                        toolbarHeight: DEFAULT_THEME.shell.toolbarHeight,
-                        contentWidth: DEFAULT_THEME.shell.contentWidth,
+                        sidebarWidth: savedTheme.shell.sidebarWidth,
+                        railWidth: savedTheme.shell.railWidth,
+                        utilityWidth: savedTheme.shell.utilityWidth,
+                        toolbarHeight: savedTheme.shell.toolbarHeight,
+                        contentWidth: savedTheme.shell.contentWidth,
                       },
                     }))
                   }
@@ -1251,7 +1228,7 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      shell: { ...current.shell, surfaceOpacity: DEFAULT_THEME.shell.surfaceOpacity },
+                      shell: { ...current.shell, surfaceOpacity: savedTheme.shell.surfaceOpacity },
                     }))
                   }
                 >
@@ -1296,10 +1273,10 @@ export function Workbench({
                       ...current,
                       shell: {
                         ...current.shell,
-                        dividerWidth: DEFAULT_THEME.shell.dividerWidth,
-                        dividerStrength: DEFAULT_THEME.shell.dividerStrength,
-                        dividerTint: DEFAULT_THEME.shell.dividerTint,
-                        dividerGlow: DEFAULT_THEME.shell.dividerGlow,
+                        dividerWidth: savedTheme.shell.dividerWidth,
+                        dividerStrength: savedTheme.shell.dividerStrength,
+                        dividerTint: savedTheme.shell.dividerTint,
+                        dividerGlow: savedTheme.shell.dividerGlow,
                       },
                     }))
                   }
@@ -1385,7 +1362,7 @@ export function Workbench({
                   onClick={() =>
                     setTheme((current) => ({
                       ...current,
-                      radii: { ...DEFAULT_THEME.radii },
+                      radii: { ...savedTheme.radii },
                     }))
                   }
                 >

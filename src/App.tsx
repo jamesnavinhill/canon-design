@@ -76,12 +76,80 @@ import {
 import { buildThemeCssText, buildThemeCssVars } from './system/cssVars';
 import {
   DEFAULT_THEME,
+  DEFAULT_THEME_TEMPLATE,
+  THEME_LIBRARY_TEMPLATES,
   cloneTheme,
   type StudioTheme,
 } from './system/schema';
 
-const STORAGE_KEY = 'canon-design-system-studio/v4';
+interface ThemeWorkspaceState {
+  version: 1;
+  activeThemeId: string;
+  savedThemes: Record<string, StudioTheme>;
+  draftThemes: Record<string, StudioTheme>;
+}
+
+const STORAGE_KEY = 'canon-design-system-studio/v5';
+const LEGACY_STORAGE_KEY = 'canon-design-system-studio/v4';
 const SHELL_OVERLAY_QUERY = '(max-width: 1180px)';
+const THEME_SLOT_IDS = THEME_LIBRARY_TEMPLATES.map((template) => template.id);
+
+const createInitialSavedThemes = (): Record<string, StudioTheme> =>
+  Object.fromEntries(
+    THEME_LIBRARY_TEMPLATES.map((template) => [template.id, cloneTheme(template.theme)])
+  ) as Record<string, StudioTheme>;
+
+const createInitialThemeWorkspace = (): ThemeWorkspaceState => {
+  const savedThemes = createInitialSavedThemes();
+
+  return {
+    version: 1,
+    activeThemeId: DEFAULT_THEME_TEMPLATE.id,
+    savedThemes,
+    draftThemes: Object.fromEntries(
+      Object.entries(savedThemes).map(([id, theme]) => [id, cloneTheme(theme)])
+    ) as Record<string, StudioTheme>,
+  };
+};
+
+const hydrateThemeMap = (
+  themes: Record<string, StudioTheme> | undefined,
+  fallbackThemes: Record<string, StudioTheme>
+): Record<string, StudioTheme> =>
+  Object.fromEntries(
+    THEME_LIBRARY_TEMPLATES.map((template) => [
+      template.id,
+      themes?.[template.id] ? cloneTheme(themes[template.id]) : cloneTheme(fallbackThemes[template.id]),
+    ])
+  ) as Record<string, StudioTheme>;
+
+const hydrateThemeWorkspace = (
+  workspace: Partial<ThemeWorkspaceState> | null | undefined
+): ThemeWorkspaceState => {
+  const defaultSavedThemes = createInitialSavedThemes();
+  const savedThemes = hydrateThemeMap(workspace?.savedThemes, defaultSavedThemes);
+  const draftThemes = hydrateThemeMap(workspace?.draftThemes, savedThemes);
+  const activeThemeId =
+    workspace?.activeThemeId && THEME_SLOT_IDS.includes(workspace.activeThemeId)
+      ? workspace.activeThemeId
+      : DEFAULT_THEME_TEMPLATE.id;
+
+  return {
+    version: 1,
+    activeThemeId,
+    savedThemes,
+    draftThemes,
+  };
+};
+
+const migrateLegacyTheme = (theme: StudioTheme): ThemeWorkspaceState => {
+  const workspace = createInitialThemeWorkspace();
+  workspace.savedThemes[DEFAULT_THEME_TEMPLATE.id] = cloneTheme(theme);
+  workspace.draftThemes[DEFAULT_THEME_TEMPLATE.id] = cloneTheme(theme);
+  return workspace;
+};
+
+const serializeTheme = (theme: StudioTheme) => JSON.stringify(theme);
 
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(() =>
@@ -291,21 +359,30 @@ const TRANSCRIPT_MESSAGES: TranscriptMessage[] = [
   },
 ];
 
-const loadTheme = (): StudioTheme => {
+const loadThemeWorkspace = (): ThemeWorkspaceState => {
   if (typeof window === 'undefined') {
-    return cloneTheme(DEFAULT_THEME);
+    return createInitialThemeWorkspace();
   }
 
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return cloneTheme(DEFAULT_THEME);
+  if (raw) {
+    try {
+      return hydrateThemeWorkspace(JSON.parse(raw) as ThemeWorkspaceState);
+    } catch {
+      // Fall through to legacy migration/default boot.
+    }
   }
 
-  try {
-    return cloneTheme(JSON.parse(raw) as StudioTheme);
-  } catch {
-    return cloneTheme(DEFAULT_THEME);
+  const legacyRaw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (legacyRaw) {
+    try {
+      return migrateLegacyTheme(JSON.parse(legacyRaw) as StudioTheme);
+    } catch {
+      return createInitialThemeWorkspace();
+    }
   }
+
+  return createInitialThemeWorkspace();
 };
 
 const applyThemeToDocument = (theme: StudioTheme) => {
@@ -321,7 +398,23 @@ const applyThemeToDocument = (theme: StudioTheme) => {
 export default function App() {
   const isOverlayShell = useMediaQuery(SHELL_OVERLAY_QUERY);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
-  const [theme, setThemeState] = useState<StudioTheme>(() => loadTheme());
+  const [themeWorkspace, setThemeWorkspace] = useState<ThemeWorkspaceState>(() => loadThemeWorkspace());
+  const [previewMode, setPreviewMode] = useState<StudioTheme['mode']>(
+    () =>
+      themeWorkspace.draftThemes[themeWorkspace.activeThemeId]?.mode ??
+      themeWorkspace.savedThemes[themeWorkspace.activeThemeId]?.mode ??
+      DEFAULT_THEME.mode
+  );
+  const theme =
+    themeWorkspace.draftThemes[themeWorkspace.activeThemeId] ??
+    themeWorkspace.savedThemes[themeWorkspace.activeThemeId];
+  const displayTheme = {
+    ...theme,
+    mode: previewMode,
+  };
+  const activeSavedTheme =
+    themeWorkspace.savedThemes[themeWorkspace.activeThemeId] ?? cloneTheme(DEFAULT_THEME);
+  const activeThemeDirty = serializeTheme(theme) !== serializeTheme(activeSavedTheme);
   const [toolbarOffset, setToolbarOffset] = useState(DEFAULT_THEME.shell.toolbarHeight);
   const [workbenchOpen, setWorkbenchOpen] = useState(false);
   const [workbenchPlacement, setWorkbenchPlacement] = useState<'left' | 'right'>('right');
@@ -360,7 +453,101 @@ export default function App() {
   const controlSections = useExclusiveDisclosure<'accordion' | 'modal' | 'mobile'>(null);
 
   const setTheme = (updater: (current: StudioTheme) => StudioTheme) => {
-    setThemeState((current) => updater(current));
+    setThemeWorkspace((current) => {
+      const activeTheme =
+        current.draftThemes[current.activeThemeId] ?? current.savedThemes[current.activeThemeId];
+
+      return {
+        ...current,
+        draftThemes: {
+          ...current.draftThemes,
+          [current.activeThemeId]: updater(activeTheme),
+        },
+      };
+    });
+  };
+
+  const setActiveThemeId = (themeId: string) => {
+    if (!THEME_SLOT_IDS.includes(themeId)) {
+      return;
+    }
+
+    setThemeWorkspace((current) => ({
+      ...current,
+      activeThemeId: themeId,
+    }));
+  };
+
+  const setPreviewModeForActiveTheme = (mode: StudioTheme['mode']) => {
+    setPreviewMode(mode);
+    setTheme((current) => ({
+      ...current,
+      mode,
+    }));
+  };
+
+  const saveActiveTheme = () => {
+    setThemeWorkspace((current) => {
+      const currentDraft =
+        current.draftThemes[current.activeThemeId] ?? current.savedThemes[current.activeThemeId];
+      const savedTheme = cloneTheme(currentDraft);
+
+      return {
+        ...current,
+        savedThemes: {
+          ...current.savedThemes,
+          [current.activeThemeId]: savedTheme,
+        },
+        draftThemes: {
+          ...current.draftThemes,
+          [current.activeThemeId]: cloneTheme(savedTheme),
+        },
+      };
+    });
+  };
+
+  const revertActiveThemeToSaved = () => {
+    setThemeWorkspace((current) => {
+      const savedTheme = current.savedThemes[current.activeThemeId];
+      if (!savedTheme) {
+        return current;
+      }
+
+      return {
+        ...current,
+        draftThemes: {
+          ...current.draftThemes,
+          [current.activeThemeId]: cloneTheme(savedTheme),
+        },
+      };
+    });
+  };
+
+  const resetActiveThemeToFactory = () => {
+    const factoryTheme =
+      THEME_LIBRARY_TEMPLATES.find((template) => template.id === themeWorkspace.activeThemeId)?.theme ??
+      DEFAULT_THEME;
+    const nextTheme = cloneTheme(factoryTheme);
+
+    setThemeWorkspace((current) => ({
+      ...current,
+      savedThemes: {
+        ...current.savedThemes,
+        [current.activeThemeId]: cloneTheme(nextTheme),
+      },
+      draftThemes: {
+        ...current.draftThemes,
+        [current.activeThemeId]: cloneTheme(nextTheme),
+      },
+    }));
+  };
+
+  const resetAllThemesToFactory = () => {
+    const workspace = createInitialThemeWorkspace();
+    setThemeWorkspace((current) => ({
+      ...workspace,
+      activeThemeId: current.activeThemeId,
+    }));
   };
 
   const resetToastPreviewItems = () => {
@@ -380,9 +567,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    applyThemeToDocument(theme);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(theme));
-  }, [theme]);
+    applyThemeToDocument(displayTheme);
+  }, [displayTheme]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(themeWorkspace));
+  }, [themeWorkspace]);
 
   useEffect(() => {
     const toolbarNode = toolbarRef.current;
@@ -604,7 +794,7 @@ export default function App() {
       content: (
         <MetricGrid
           items={[
-            { label: 'Mode', value: theme.mode },
+            { label: 'Mode', value: displayTheme.mode },
             { label: 'Background', value: theme.background.variant },
             {
               label: 'Accent',
@@ -621,7 +811,7 @@ export default function App() {
     <ConfigPanel
       title="Workbench Configuration"
       onClose={close}
-      onReset={() => setThemeState(cloneTheme(DEFAULT_THEME))}
+      onReset={() => setTheme(() => cloneTheme(activeSavedTheme))}
     >
       <ConfigPanelSection title="Shell Geometry">
         <RangeField
@@ -702,13 +892,10 @@ export default function App() {
             footer={
               <>
                 <SidebarAction
-                  icon={theme.mode === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-                  label={theme.mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  icon={previewMode === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+                  label={previewMode === 'dark' ? 'Light Mode' : 'Dark Mode'}
                   onClick={() =>
-                    setTheme((current) => ({
-                      ...current,
-                      mode: current.mode === 'dark' ? 'light' : 'dark',
-                    }))
+                    setPreviewModeForActiveTheme(previewMode === 'dark' ? 'light' : 'dark')
                   }
                 />
                 <SidebarAction
@@ -869,7 +1056,16 @@ export default function App() {
               onClose={closeWorkbench}
               onMove={setWorkbenchPlacement}
               theme={theme}
+              savedTheme={activeSavedTheme}
+              previewMode={previewMode}
               setTheme={setTheme}
+              activeThemeId={themeWorkspace.activeThemeId}
+              onSelectTheme={setActiveThemeId}
+              onSaveTheme={saveActiveTheme}
+              onRevertTheme={revertActiveThemeToSaved}
+              onFactoryResetTheme={resetActiveThemeToFactory}
+              onFactoryResetAll={resetAllThemesToFactory}
+              themeDirty={activeThemeDirty}
             />
           ) : undefined
         }
@@ -882,7 +1078,16 @@ export default function App() {
               onClose={closeWorkbench}
               onMove={setWorkbenchPlacement}
               theme={theme}
+              savedTheme={activeSavedTheme}
+              previewMode={previewMode}
               setTheme={setTheme}
+              activeThemeId={themeWorkspace.activeThemeId}
+              onSelectTheme={setActiveThemeId}
+              onSaveTheme={saveActiveTheme}
+              onRevertTheme={revertActiveThemeToSaved}
+              onFactoryResetTheme={resetActiveThemeToFactory}
+              onFactoryResetAll={resetAllThemesToFactory}
+              themeDirty={activeThemeDirty}
             />
           ) : undefined
         }
@@ -1358,7 +1563,7 @@ export default function App() {
                       settings are now surfaced through reusable cards and selectors instead of
                       buried in page-specific markup.
                     </Text>
-                    <CodeBlock>{`accent=${Math.round(theme.accent.hue)}\nvariant=${theme.background.variant}\nmode=${theme.mode}`}</CodeBlock>
+                    <CodeBlock>{`accent=${Math.round(theme.accent.hue)}\nvariant=${theme.background.variant}\nmode=${displayTheme.mode}`}</CodeBlock>
                   </div>
                 </SurfaceCard>
 
