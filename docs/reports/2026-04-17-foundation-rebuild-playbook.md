@@ -84,13 +84,13 @@ Important clarification:
 
 Keep only the parts that are actually strong enough to justify extraction:
 
-- shell proportions and spatial decisions that still feel right
-- workbench concepts and tuning behaviors that are still useful
+- shell proportions and spatial decisions that still feel right - these all feel good. wed like more dials around a collective app level padding, spacing slider tbh. oen thing were missing now that we keep wishign we had
+- workbench concepts and tuning behaviors that are still useful - we love our workbench behaviour. the docking. the look, the setup and flow. it works well for us right now. of course it likely needs rebuilt into the new primitive systems but the contents should not be left behind
 - token ideas
-- typography decisions worth preserving
-- any layout pieces that are already genuinely clean
+- typography decisions worth preserving All of our typography is solid. we will eventually add more fonts, and if anything we could maybe add or make some of the family and placings more obvious.. butit feels pretty great now
+- any layout pieces that are already genuinely clean. the goal would be to have multiple shells, or ability to shange the layouts. sidebar or top nav / side rails or no, etc.. but this will come as we go. for now we like our first piece as-is. the shell is also something we worked alot on and hsoul dbe rpeserved as much as possible in shape/behavior, while making it clean and rebuilt for the new app if necessary.
 
-These should be copied intentionally, not inherited by default.
+These should be copied intentionally, not inherited by default. Our theme system is VITAL. ALL controls are required. plus will add more as we introduce the new items where it makes sense. / the layout sizing is resizeable and saved. all of our themes are required to bring over. all the good save logic. some plans to expand and clean them up a bit should be folded in. so dark/light are split in the intended ways. this is the foundation of this app, a fully customizeable, exportable design system. we have a great start there and this is our most valuable resource to reuse as much aspossible plus build out as necessary.
 
 ### Do Not Carry Forward By Default
 
