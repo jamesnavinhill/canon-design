@@ -96,7 +96,7 @@ These are not keeper assets unless a specific piece proves it belongs:
 - Put tokens first. New spacing, radii, motion, shadow, color, and layout values should enter through the shared system.
 - Build shared primitives before page-local copies when a pattern will repeat.
 - Prefer direct page surfaces, section rhythm, and dividers over box-in-box composition.
-- Replace legacy pieces as cleaner replacements land.
+- Replace legacy pieces as cleaner replacements land. \*No legacy undesired conventions will be in the new app. old app can remain as-is, no need to do edit old app files
 - Keep docs current in the same pass as structural or system changes.
 - Add tests after boundaries and APIs are intentionally stable enough to lock.
 - Keep the workbench focused on global system tuning, not page-local configuration.
